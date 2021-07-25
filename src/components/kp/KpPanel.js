@@ -16,11 +16,28 @@ const requestStatus = {
     SUCCESS_NOT_INCONSISTED: 4
 }
 
+const getDefaultFields = (kpType, kpTypes) => {
+    return kpType === kpTypes.QUANTS ? {} : {
+        [0]: {
+            value: {
+                [0]: 1,
+                [1]: 1
+            },
+            valid: true,
+            className: 'is-success'
+        }
+    }
+}
+
+const isVisibleInput = (index, kpType, kpTypes) => {
+    return kpType === kpTypes.QUANTS || (index !== 0);
+}
+
 export default function KpPanel(props) {
     const [estimationType, setEstimationType] = useState(estimationTypes.INTERVAL);
     const [baseNumber, setBaseNumber] = useState(3);
     const [status, setStatus] = useState(requestStatus.NON_REQUESTED);
-    const [fields, setFields] = useState({});
+    const [fields, setFields] = useState(getDefaultFields(props.kpType, props.kpTypes));
     const [validForm, setValidForm] = useState(false);
     const variablesEvaluation = {
         [props.kpTypes.CONJUCTS]: (baseNumber, index) => [...Array(baseNumber).keys()].map(
@@ -56,16 +73,16 @@ export default function KpPanel(props) {
             }
         updateValid(true);
     }
-    const getValueObject = (firstValue, secondValue, type= estimationType) => {
+    const getValueObject = (firstValue, secondValue, type = estimationType) => {
         return {
             ...{[0]: firstValue}, ...(type === estimationTypes.INTERVAL ? {[1]: secondValue} : {})
         }
     }
-    const isValidFields = (firstValue, secondValue, type=estimationType) => {
+    const isValidFields = (firstValue, secondValue, type = estimationType) => {
         return checkFieldValue(firstValue)
             && (type === estimationTypes.POINT || (checkFieldValue(secondValue) && (secondValue - firstValue) >= 0));
     }
-    const getClassName = (firstValue, secondValue, type=estimationType) => {
+    const getClassName = (firstValue, secondValue, type = estimationType) => {
         if (isValidFields(firstValue, secondValue, type))
             return 'is-success';
         else if (!firstValue || (!secondValue && type === estimationTypes.INTERVAL))
@@ -129,7 +146,7 @@ export default function KpPanel(props) {
     }
     const cleanState = () => {
         setStatus(requestStatus.NON_REQUESTED);
-        setFields({});
+        setFields(getDefaultFields(props.kpType, props.kpTypes));
         validateForm({});
     }
     const modifyState = () => {
@@ -141,16 +158,17 @@ export default function KpPanel(props) {
                           updateEstimationType={updateEstimationType}
                           baseNumber={baseNumber} updateBaseNumber={updateBaseNumber}/>
         <div className={'kp-container__tab'}>
-            {[...Array(1 << baseNumber).keys()].map(index => {
+            {[...Array((1 << baseNumber)).keys()].map(index => {
                 const variables = variablesEvaluation[props.kpType](baseNumber, index);
                 const expression = '$p_{' + variables + '}$';
-                return <InputEstimations expression={expression} key={index} estimationType={estimationType}
-                                         estimationTypes={estimationTypes}
-                                         modificable={status === requestStatus.NON_REQUESTED}
-                                         updateValue={(value, num) => updateValue(value, num, index)}
-                                         firstValue={(fields[index] && fields[index].value[0]) ? fields[index].value[0] : ''}
-                                         secondValue={(fields[index] && fields[index].value[1]) ? fields[index].value[1] : ''}
-                                         className={fields[index] ? fields[index].className : 'is-dark'}/>
+                return (isVisibleInput(index, props.kpType, props.kpTypes) &&
+                    <InputEstimations expression={expression} key={index} estimationType={estimationType}
+                                      estimationTypes={estimationTypes}
+                                      modificable={status === requestStatus.NON_REQUESTED}
+                                      updateValue={(value, num) => updateValue(value, num, index)}
+                                      firstValue={(fields[index] && fields[index].value[0]) ? fields[index].value[0] : ''}
+                                      secondValue={(fields[index] && fields[index].value[1]) ? fields[index].value[1] : ''}
+                                      className={fields[index] ? fields[index].className : 'is-dark'}/>);
             })}
         </div>
         <div className="kp-container__validate level">
@@ -172,8 +190,12 @@ export default function KpPanel(props) {
                 </div>
                 {status !== requestStatus.NON_REQUESTED &&
                 <div className="kp-container__requested">
-                    <div className="button is-purple kp-container__requested__state-changer" onClick={() => modifyState()}>Modify</div>
-                    <div className="button is-grey-light kp-container__requested__state-changer" onClick={() => cleanState()}>Clean</div>
+                    <div className="button is-purple kp-container__requested__state-changer"
+                         onClick={() => modifyState()}>Modify
+                    </div>
+                    <div className="button is-grey-light kp-container__requested__state-changer"
+                         onClick={() => cleanState()}>Clean
+                    </div>
                 </div>}
             </div>
         </div>

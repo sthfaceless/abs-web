@@ -23,7 +23,8 @@ export default function KP() {
                     )}
                 </ul>
             </div>
-            <KpPanel kpType={kpType} kpTypes={knowledgePatternTypes}/>
+            {Object.values(knowledgePatternTypes).map(type =>
+                type === kpType && <KpPanel key={type} kpType={type} kpTypes={knowledgePatternTypes}/>)}
         </div>
     );
 }
