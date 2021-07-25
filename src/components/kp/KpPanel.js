@@ -73,7 +73,9 @@ export default function KpPanel(props) {
             }
         updateValid(true);
     }
-    const getValueObject = (firstValue, secondValue, type = estimationType) => {
+    const getValueObject = (firstValue, secondValue, type = estimationType, index) => {
+        if (index === 0 && props.kpType !== props.kpTypes.QUANTS)
+            return {[0]: 1, [1]: 1};
         return {
             ...{[0]: firstValue}, ...(type === estimationTypes.INTERVAL ? {[1]: secondValue} : {})
         }
@@ -93,7 +95,7 @@ export default function KpPanel(props) {
     const updateValue = (fieldValue, num, index) => {
         const firstValue = (num === 0) ? fieldValue : (fields[index] ? fields[index].value[0] : '');
         const secondValue = (num === 1) ? fieldValue : (fields[index] ? fields[index].value[1] : '');
-        const value = getValueObject(firstValue, secondValue);
+        const value = getValueObject(firstValue, secondValue, estimationType, index);
         const valid = isValidFields(firstValue, secondValue);
         const className = getClassName(firstValue, secondValue);
         const __fields = {...fields, [index]: {value, valid, className}};
@@ -108,17 +110,17 @@ export default function KpPanel(props) {
         const __fields = Object.keys(fields).splice(0, 1 << __baseNumber).reduce(
             (prevFields, key) => {
                 return {...prevFields, [key]: fields[key]}
-            }, {});
+            }, getDefaultFields(props.kpType, props.kpTypes));
         setFields(__fields);
         validateForm(__fields, __baseNumber);
     }
     const updateEstimationType = (type) => {
         const __fields = Object.keys(fields).reduce((prevFields, key) => {
-            const value = getValueObject(fields[key].value[0], fields[key].value[1], type);
+            const value = getValueObject(fields[key].value[0], fields[key].value[1], type, Number.parseInt(key));
             const valid = isValidFields(fields[key].value[0], fields[key].value[1], type);
             const className = getClassName(fields[key].value[0], fields[key].value[1], type);
             return {...prevFields, [key]: {value, valid, className}}
-        }, {});
+        }, getDefaultFields(props.kpType, props.kpTypes));
         setEstimationType(type);
         setFields(__fields);
         validateForm(__fields);
