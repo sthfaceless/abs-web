@@ -6,7 +6,7 @@ export default function Container(props){
     return (<div className={"container main-container"}>
         <BrowserRouter>
             <Switch>
-                <Route path={"/"} render={() => {
+                <Route path={"/"} exact={true} render={() => {
                     props.header.updatePage("main")
                     return <KP/>
                 }}/>
