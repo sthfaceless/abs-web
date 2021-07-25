@@ -1,2 +1,4 @@
 # abs-web
-Web interface for operations on algebraic bayesian networks 
+[Web interface](https://abswebapi.github.io/) for operations on algebraic bayesian networks
+
+
