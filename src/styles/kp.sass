@@ -1,0 +1,87 @@
+.kp-container
+  display: flex
+  flex-flow: column
+
+  .tags
+    margin-bottom: 0
+
+    .tag
+      margin-bottom: 0
+
+  &__title
+    margin: 40px 0 10px 0 !important
+
+  &__modifiers
+    display: flex
+    margin: 5px 0
+
+    .tags
+      margin: 0 20px 0 0
+
+    &__checkbox
+      .is-active
+        background-color: $blue
+        color: $white
+
+    &__checkitem
+      margin: 0 7px
+      cursor: pointer
+
+      &:hover
+        background-color: $blue
+        color: $white
+
+    &__number-action
+      cursor: pointer
+      background-color: $grey-lightest !important
+      color: $grey-dark !important
+
+
+  &__tab-links
+    margin: 0 !important
+
+    > ul
+      padding-inline-start: 0
+
+  &__tab
+    margin: 30px 0
+    display: flex
+    flex-wrap: wrap
+
+    .tags
+      margin: 10px
+
+      .tag
+        margin: 0
+
+    &__input-item
+      padding: 0 !important
+      margin: 0 !important
+
+      input
+        margin: 0 !important
+        padding: 0 5px !important
+        height: 100% !important
+        max-width: 50px
+
+    &__center-item
+      border-radius: 0 !important
+
+  &__validate
+    &__submit
+      padding: 3px 40px
+      font-size: 1rem
+      &:hover
+        background-color: #650b3a
+    .is-grey
+      cursor: default
+      background-color: $grey
+      &:hover
+        background-color: $grey
+  &__result
+    margin-right: 20px
+  &__requested
+    display: flex
+    &__state-changer
+      margin-right: 20px
+      padding: 3px 40px
