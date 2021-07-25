@@ -80,7 +80,7 @@
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -r git@github.com-abs-web:abswebapi/abswebapi.git -b master -d build"
+    "deploy": "gh-pages -r git@github.com-abs-web:abswebapi/abswebapi.github.io.git -b master -d build"
   },
   "eslintConfig": {
     "extends": [
