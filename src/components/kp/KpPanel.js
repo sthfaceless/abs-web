@@ -2,8 +2,11 @@ import {useState} from 'react';
 import KpPanelModifiers from "components/kp/KpPanelModifiers";
 import InputEstimations from "./InputEstimations";
 import requestInconsistencyChecking from "utils/httputils";
+import {variablesEvaluation} from "components/kp/KP";
+import {properties} from "properties";
 
-const estimationTypes = {
+
+export const estimationTypes = {
     INTERVAL: 'Interval',
     SCALAR: 'Scalar'
 }
@@ -29,7 +32,7 @@ const getDefaultFields = (kpType, kpTypes) => {
     }
 }
 
-const isVisibleInput = (index, kpType, kpTypes) => {
+export const isVisibleInput = (index, kpType, kpTypes) => {
     return kpType === kpTypes.QUANTS || (index !== 0);
 }
 
@@ -40,17 +43,6 @@ export default function KpPanel(props) {
     const [fields, setFields] = useState(getDefaultFields(props.kpType, props.kpTypes));
     const [validForm, setValidForm] = useState(false);
     const normalizeNumber = (number) => Number.parseFloat(String(number).replaceAll(',', '.'));
-    const variablesEvaluation = {
-        [props.kpTypes.CONJUNCTS]: (baseNumber, index) => [...Array(baseNumber).keys()].map(
-            j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}' : '')
-            .reduce((a, b) => a + b) || '\\emptyset',
-        [props.kpTypes.DISJUNCTS]: (baseNumber, index) => [...Array(baseNumber).keys()]
-            .map((j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}\\lor ' : ''))
-            .reduce((a, b) => a + b).slice(0, -'\\lor '.length) || '\\emptyset',
-        [props.kpTypes.QUANTS]: (baseNumber, index) => [...Array(baseNumber).keys()]
-            .map(j => (((1 << j) & index) ? '' : '\\bar ') + 'x_{' + (j + 1) + '}')
-            .reduce((a, b) => a + b)
-    }
     const checkFieldValue = (value) => {
         const regexpTest = /^[0-9]+(([.,])[0-9]+)?$/.test(value);
         if (!regexpTest)
@@ -110,7 +102,7 @@ export default function KpPanel(props) {
         validateForm(__fields);
     }
     const updateBaseNumber = (update) => {
-        if(status !== requestStatus.NON_REQUESTED)
+        if (status !== requestStatus.NON_REQUESTED)
             return
         let __baseNumber = baseNumber + update;
         __baseNumber = Math.max(__baseNumber, 1);
@@ -134,13 +126,26 @@ export default function KpPanel(props) {
         setFields(__fields);
         validateForm(__fields);
     }
-    const updateReconciliationHistory = () => {
-
+    const updateReconciliationHistory = (fields, type, estimationType, baseNumber, status, statusText) => {
+        const oldHistory = JSON.parse(localStorage.getItem(properties.reconciliationHistory)) || [];
+        const item = {
+            data: Object.entries(fields).reduce((prev, [key, value]) => ({...prev, [key]: value.value}), {}),
+            date: new Date().toLocaleString(),
+            type: type.charAt(0).toUpperCase() + type.slice(1),
+            status,
+            statusText,
+            estimationType,
+            baseNumber
+        }
+        const newHistory = [item, ...oldHistory];
+        localStorage.setItem(properties.reconciliationHistory, JSON.stringify(newHistory));
+        props.setItems(newHistory);
     }
     const reconcile = () => {
         validateForm(fields);
         if (!validForm || !(status === requestStatus.NON_REQUESTED || status === requestStatus.ERROR))
             return
+        const __baseNumber = baseNumber;
         const data = {}
         data.data = Object.keys(fields).slice(0, 1 << baseNumber).reduce((prevData, key) => (
             {...prevData, [key]: normalizeValue(fields[key].value)}
@@ -152,7 +157,7 @@ export default function KpPanel(props) {
             (result) => {
                 if (result.isInconsistent) {
                     setStatus(requestStatus.SUCCESS_INCONSISTENCY);
-                    setFields(Object.entries(fields).reduce((prev, [key, value]) => (
+                    const __fields = Object.entries(fields).reduce((prev, [key, value]) => (
                             {
                                 ...prev, [key]: {
                                     ...value, value: {
@@ -162,17 +167,22 @@ export default function KpPanel(props) {
                                 }
                             }
                         ),
-                        getDefaultFields(props.kpType, props.kpTypes)));
+                        getDefaultFields(props.kpType, props.kpTypes))
+                    setFields(__fields);
+                    updateReconciliationHistory(__fields, data.type, estimationType, __baseNumber, true, 'Inconsistent');
                 } else {
                     setStatus(requestStatus.SUCCESS_NOT_INCONSISTED);
-                    setFields(Object.entries(fields).reduce((prev, [key, value]) => ({
+                    const __fields = Object.entries(fields).reduce((prev, [key, value]) => ({
                             ...prev, [key]: {...value, className: 'is-danger', valid: false}
                         }),
-                        getDefaultFields(props.kpType, props.kpTypes)));
+                        getDefaultFields(props.kpType, props.kpTypes));
+                    setFields(__fields);
+                    updateReconciliationHistory(__fields, data.type, estimationType, __baseNumber, false, 'Not inconsistent');
                 }
             },
             (error) => {
                 setStatus(requestStatus.ERROR);
+                updateReconciliationHistory(fields, data.type, estimationType, __baseNumber, false, 'Server error');
             })
     }
     const cleanState = () => {

@@ -1,20 +1,30 @@
-import {useState, useContext} from 'react';
+import {useContext, useState} from 'react';
 import KpPanel from "components/kp/KpPanel";
 import {ApplicationContext} from "components/ABSApplication";
+import ReconciliationHistory from "./ReconciliationHistory";
+import {properties} from "properties";
 
 export const knowledgePatternTypes = {
     CONJUNCTS: 'Conjuncts',
     DISJUNCTS: 'Disjuncts',
     QUANTS: 'Quants'
 }
-const kpPanels = {
-    [knowledgePatternTypes.CONJUNCTS]: <KpPanel key={knowledgePatternTypes.CONJUNCTS} kpType={knowledgePatternTypes.CONJUNCTS} kpTypes={knowledgePatternTypes}/>,
-    [knowledgePatternTypes.DISJUNCTS]: <KpPanel key={knowledgePatternTypes.DISJUNCTS} kpType={knowledgePatternTypes.DISJUNCTS} kpTypes={knowledgePatternTypes}/>,
-    [knowledgePatternTypes.QUANTS]: <KpPanel key={knowledgePatternTypes.QUANTS} kpType={knowledgePatternTypes.QUANTS} kpTypes={knowledgePatternTypes}/>
+
+export const variablesEvaluation = {
+    [knowledgePatternTypes.CONJUNCTS]: (baseNumber, index) => [...Array(baseNumber).keys()].map(
+        j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}' : '')
+        .reduce((a, b) => a + b) || '\\emptyset',
+    [knowledgePatternTypes.DISJUNCTS]: (baseNumber, index) => [...Array(baseNumber).keys()]
+        .map((j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}\\lor ' : ''))
+        .reduce((a, b) => a + b).slice(0, -'\\lor '.length) || '\\emptyset',
+    [knowledgePatternTypes.QUANTS]: (baseNumber, index) => [...Array(baseNumber).keys()]
+        .map(j => (((1 << j) & index) ? '' : '\\bar ') + 'x_{' + (j + 1) + '}')
+        .reduce((a, b) => a + b)
 }
+
 export default function KP() {
+    const [items, setItems] = useState(JSON.parse(localStorage.getItem(properties.reconciliationHistory)));
     const [kpType, setKpType] = useState(knowledgePatternTypes.CONJUNCTS);
-    const {context, updateContext} = useContext(ApplicationContext);
     return (<div className={'kp-container'}>
             <h1 className={'kp-container__title title'}>
                 Reconciliation
@@ -30,7 +40,9 @@ export default function KP() {
                     )}
                 </ul>
             </div>
-            {kpPanels[kpType]}
+            {Object.values(knowledgePatternTypes).map(type => (type === kpType && <KpPanel key={type} kpType={type}
+                                                                                           kpTypes={knowledgePatternTypes} items={items} setItems={setItems}/>))}
+            <ReconciliationHistory items={items} setItems={setItems}/>
         </div>
     );
 }
