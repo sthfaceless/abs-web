@@ -2,15 +2,20 @@ import {useState} from 'react';
 import KpPanel from "./KpPanel";
 
 export const knowledgePatternTypes = {
-    CONJUCTS: 'Conjucts',
+    CONJUNCTS: 'Conjuncts',
     DISJUNCTS: 'Disjuncts',
     QUANTS: 'Quants'
 }
+const kpPanels = {
+    [knowledgePatternTypes.CONJUNCTS]: <KpPanel key={knowledgePatternTypes.CONJUNCTS} kpType={knowledgePatternTypes.CONJUNCTS} kpTypes={knowledgePatternTypes}/>,
+    [knowledgePatternTypes.DISJUNCTS]: <KpPanel key={knowledgePatternTypes.DISJUNCTS} kpType={knowledgePatternTypes.DISJUNCTS} kpTypes={knowledgePatternTypes}/>,
+    [knowledgePatternTypes.QUANTS]: <KpPanel key={knowledgePatternTypes.QUANTS} kpType={knowledgePatternTypes.QUANTS} kpTypes={knowledgePatternTypes}/>
+}
 export default function KP() {
-    const [kpType, setKpType] = useState(knowledgePatternTypes.CONJUCTS);
+    const [kpType, setKpType] = useState(knowledgePatternTypes.CONJUNCTS);
     return (<div className={'kp-container'}>
             <h1 className={'kp-container__title title'}>
-                Inconsistency checking
+                Reconciliation
             </h1>
             <div className="kp-container__tab-links tabs">
                 <ul>
@@ -23,8 +28,7 @@ export default function KP() {
                     )}
                 </ul>
             </div>
-            {Object.values(knowledgePatternTypes).map(type =>
-                type === kpType && <KpPanel key={type} kpType={type} kpTypes={knowledgePatternTypes}/>)}
+            {kpPanels[kpType]}
         </div>
     );
 }

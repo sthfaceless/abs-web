@@ -5,7 +5,7 @@ import requestInconsistencyChecking from "utils/httputils";
 
 const estimationTypes = {
     INTERVAL: 'Interval',
-    POINT: 'Point'
+    SCALAR: 'Scalar'
 }
 
 const requestStatus = {
@@ -39,24 +39,29 @@ export default function KpPanel(props) {
     const [status, setStatus] = useState(requestStatus.NON_REQUESTED);
     const [fields, setFields] = useState(getDefaultFields(props.kpType, props.kpTypes));
     const [validForm, setValidForm] = useState(false);
+    const normalizeNumber = (number) => Number.parseFloat(String(number).replaceAll(',', '.'));
     const variablesEvaluation = {
-        [props.kpTypes.CONJUCTS]: (baseNumber, index) => [...Array(baseNumber).keys()].map(
+        [props.kpTypes.CONJUNCTS]: (baseNumber, index) => [...Array(baseNumber).keys()].map(
             j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}' : '')
             .reduce((a, b) => a + b) || '\\emptyset',
         [props.kpTypes.DISJUNCTS]: (baseNumber, index) => [...Array(baseNumber).keys()]
-            .map(j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}' : '')
-            .reduce((a, b) => a + b) || '\\emptyset',
+            .map((j => ((1 << j) & index) ? 'x_{' + (j + 1) + '}\\lor ' : ''))
+            .reduce((a, b) => a + b).slice(0, -'\\lor '.length) || '\\emptyset',
         [props.kpTypes.QUANTS]: (baseNumber, index) => [...Array(baseNumber).keys()]
             .map(j => (((1 << j) & index) ? '' : '\\bar ') + 'x_{' + (j + 1) + '}')
-            .reduce((a, b) => a + b),
+            .reduce((a, b) => a + b)
     }
     const checkFieldValue = (value) => {
-        if (!/^[0-9]+(\.[0-9]+)?$/.test(value))
+        const regexpTest = /^[0-9]+(([.,])[0-9]+)?$/.test(value);
+        if (!regexpTest)
             return false;
-        value = Number.parseFloat(value);
+        value = normalizeNumber(value);
         if (0 > value || value > 1.0)
             return false;
         return true
+    }
+    const checkIntervalValue = (firstValue, secondValue) => {
+        return normalizeNumber(secondValue) - normalizeNumber(firstValue) >= 0;
     }
     const updateValid = (valid) => {
         if (valid !== validForm)
@@ -82,7 +87,7 @@ export default function KpPanel(props) {
     }
     const isValidFields = (firstValue, secondValue, type = estimationType) => {
         return checkFieldValue(firstValue)
-            && (type === estimationTypes.POINT || (checkFieldValue(secondValue) && (secondValue - firstValue) >= 0));
+            && (type === estimationTypes.SCALAR || (checkFieldValue(secondValue) && checkIntervalValue(firstValue, secondValue)));
     }
     const getClassName = (firstValue, secondValue, type = estimationType) => {
         if (isValidFields(firstValue, secondValue, type))
@@ -92,6 +97,8 @@ export default function KpPanel(props) {
         else
             return 'is-danger';
     }
+    const normalizeValue = (value) => (
+        Object.entries(value).reduce((prev, [key, value]) => ({...prev, [key]: normalizeNumber(value)}), {}))
     const updateValue = (fieldValue, num, index) => {
         const firstValue = (num === 0) ? fieldValue : (fields[index] ? fields[index].value[0] : '');
         const secondValue = (num === 1) ? fieldValue : (fields[index] ? fields[index].value[1] : '');
@@ -103,6 +110,8 @@ export default function KpPanel(props) {
         validateForm(__fields);
     }
     const updateBaseNumber = (update) => {
+        if(status !== requestStatus.NON_REQUESTED)
+            return
         let __baseNumber = baseNumber + update;
         __baseNumber = Math.max(__baseNumber, 1);
         __baseNumber = Math.min(__baseNumber, 10);
@@ -125,22 +134,42 @@ export default function KpPanel(props) {
         setFields(__fields);
         validateForm(__fields);
     }
-    const validate = () => {
+    const updateReconciliationHistory = () => {
+
+    }
+    const reconcile = () => {
         validateForm(fields);
         if (!validForm || !(status === requestStatus.NON_REQUESTED || status === requestStatus.ERROR))
             return
-        const data = Object.keys(fields).slice(0, 1 << baseNumber).reduce((prevData, key) => {
-            return {...prevData, [key]: fields[key].value}
-        }, {});
+        const data = {}
+        data.data = Object.keys(fields).slice(0, 1 << baseNumber).reduce((prevData, key) => (
+            {...prevData, [key]: normalizeValue(fields[key].value)}
+        ), {});
         data.type = props.kpType.toLowerCase();
         data.estimationType = estimationType.toLowerCase();
         setStatus(requestStatus.WAITING);
         requestInconsistencyChecking(data,
             (result) => {
-                if (result.result)
+                if (result.isInconsistent) {
                     setStatus(requestStatus.SUCCESS_INCONSISTENCY);
-                else
+                    setFields(Object.entries(fields).reduce((prev, [key, value]) => (
+                            {
+                                ...prev, [key]: {
+                                    ...value, value: {
+                                        [0]: result.data[key][0],
+                                        [1]: result.data[key][1]
+                                    }
+                                }
+                            }
+                        ),
+                        getDefaultFields(props.kpType, props.kpTypes)));
+                } else {
                     setStatus(requestStatus.SUCCESS_NOT_INCONSISTED);
+                    setFields(Object.entries(fields).reduce((prev, [key, value]) => ({
+                            ...prev, [key]: {...value, className: 'is-danger', valid: false}
+                        }),
+                        getDefaultFields(props.kpType, props.kpTypes)));
+                }
             },
             (error) => {
                 setStatus(requestStatus.ERROR);
@@ -177,8 +206,8 @@ export default function KpPanel(props) {
             <div className="level-left">
                 <div
                     className={"button kp-container__validate__submit " + (validForm && (status === requestStatus.NON_REQUESTED || status === requestStatus.ERROR)
-                        ? 'is-purple' : 'is-grey')}
-                    onClick={() => validate()}>Validate
+                        ? 'is-purple' : 'is-inactive')}
+                    onClick={() => reconcile()}>Reconcile
                 </div>
             </div>
             <div className="level-right">
@@ -190,13 +219,13 @@ export default function KpPanel(props) {
                     {status === requestStatus.SUCCESS_NOT_INCONSISTED &&
                     <p className="has-text-danger-dark">Data is not inconsistent!</p>}
                 </div>
-                {status !== requestStatus.NON_REQUESTED &&
+                {(status !== requestStatus.NON_REQUESTED && status !== requestStatus.WAITING) &&
                 <div className="kp-container__requested">
+                    <div className="button is-purple-light kp-container__requested__state-changer"
+                         onClick={() => cleanState()}>Clean
+                    </div>
                     <div className="button is-purple kp-container__requested__state-changer"
                          onClick={() => modifyState()}>Modify
-                    </div>
-                    <div className="button is-grey-light kp-container__requested__state-changer"
-                         onClick={() => cleanState()}>Clean
                     </div>
                 </div>}
             </div>

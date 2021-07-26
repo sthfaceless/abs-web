@@ -12,13 +12,14 @@
 @import "~bulma/sass/components/level"
 
 $blue: #880e4f
+$purple-light: #ff77a9
 //Import components styles here because of bugs in import odrering
 @import "header"
 @import "footer"
 @import "codes.sass"
 @import "kp"
 
-body
+body, html
   position: relative
 
 *
@@ -43,3 +44,7 @@ a
 .is-purple
   background-color: $blue !important
   color: $white !important
+.is-purple-light
+  background-color: $purple-light !important
+  color: $white !important
+

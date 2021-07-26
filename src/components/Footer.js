@@ -1,6 +1,6 @@
 export default function Footer(){
     return (<footer className={"footer"} >
-        <div className="content is-size-4">
+        <div className="content is-size-6">
             <div className="">
                 Created by <a className={"link"} href="https://github.com/sthfaceless">@sthfaceless</a>
             </div>
