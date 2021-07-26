@@ -1,5 +1,6 @@
-import {useState} from 'react';
-import KpPanel from "./KpPanel";
+import {useState, useContext} from 'react';
+import KpPanel from "components/kp/KpPanel";
+import {ApplicationContext} from "components/ABSApplication";
 
 export const knowledgePatternTypes = {
     CONJUNCTS: 'Conjuncts',
@@ -13,6 +14,7 @@ const kpPanels = {
 }
 export default function KP() {
     const [kpType, setKpType] = useState(knowledgePatternTypes.CONJUNCTS);
+    const {context, updateContext} = useContext(ApplicationContext);
     return (<div className={'kp-container'}>
             <h1 className={'kp-container__title title'}>
                 Reconciliation
