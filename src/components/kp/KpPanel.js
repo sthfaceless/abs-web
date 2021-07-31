@@ -52,7 +52,7 @@ export default function KpPanel(props) {
             return false;
         return true
     }
-    const checkIntervalValue = (firstValue, secondValue) => {
+    const checkIntervalValue = (firstValue, secondValue, type = estimationType) => {
         return normalizeNumber(secondValue) - normalizeNumber(firstValue) >= 0;
     }
     const updateValid = (valid) => {
@@ -74,12 +74,12 @@ export default function KpPanel(props) {
         if (index === 0 && props.kpType !== props.kpTypes.QUANTS)
             return {[0]: 1, [1]: 1};
         return {
-            ...{[0]: firstValue}, ...(type === estimationTypes.INTERVAL ? {[1]: secondValue} : {})
+            [0]: firstValue,
+            [1]: type === estimationTypes.INTERVAL ? secondValue : firstValue
         }
     }
     const isValidFields = (firstValue, secondValue, type = estimationType) => {
-        return checkFieldValue(firstValue)
-            && (type === estimationTypes.SCALAR || (checkFieldValue(secondValue) && checkIntervalValue(firstValue, secondValue)));
+        return checkFieldValue(firstValue) && checkFieldValue(secondValue) && checkIntervalValue(firstValue, secondValue);
     }
     const getClassName = (firstValue, secondValue, type = estimationType) => {
         if (isValidFields(firstValue, secondValue, type))
@@ -95,8 +95,8 @@ export default function KpPanel(props) {
         const firstValue = (num === 0) ? fieldValue : (fields[index] ? fields[index].value[0] : '');
         const secondValue = (num === 1) ? fieldValue : (fields[index] ? fields[index].value[1] : '');
         const value = getValueObject(firstValue, secondValue, estimationType, index);
-        const valid = isValidFields(firstValue, secondValue);
-        const className = getClassName(firstValue, secondValue);
+        const valid = isValidFields(value[0], value[1]);
+        const className = getClassName(value[0], value[1]);
         const __fields = {...fields, [index]: {value, valid, className}};
         setFields(__fields);
         validateForm(__fields);
@@ -118,8 +118,8 @@ export default function KpPanel(props) {
     const updateEstimationType = (type) => {
         const __fields = Object.keys(fields).reduce((prevFields, key) => {
             const value = getValueObject(fields[key].value[0], fields[key].value[1], type, Number.parseInt(key));
-            const valid = isValidFields(fields[key].value[0], fields[key].value[1], type);
-            const className = getClassName(fields[key].value[0], fields[key].value[1], type);
+            const valid = isValidFields(value[0], value[1], type);
+            const className = getClassName(value[0], value[1], type);
             return {...prevFields, [key]: {value, valid, className}}
         }, getDefaultFields(props.kpType, props.kpTypes));
         setEstimationType(type);
@@ -155,14 +155,14 @@ export default function KpPanel(props) {
         setStatus(requestStatus.WAITING);
         requestInconsistencyChecking(data,
             (result) => {
-                if (result.isInconsistent) {
+                if (result.inconsistent) {
                     setStatus(requestStatus.SUCCESS_INCONSISTENCY);
                     const __fields = Object.entries(fields).reduce((prev, [key, value]) => (
                             {
                                 ...prev, [key]: {
                                     ...value, value: {
-                                        [0]: result.data[key][0],
-                                        [1]: result.data[key][1]
+                                        [0]: result.array[key][0],
+                                        [1]: result.array[key][1]
                                     }
                                 }
                             }

@@ -101,8 +101,7 @@
     ]
   },
   "devDependencies": {
-    "node-sass": "^6.0.1",
-    "sass-loader": "^12.1.0"
+    "node-sass": "^6.0.1"
   },
   "jest": {
     "roots": [
