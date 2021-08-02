@@ -161,8 +161,8 @@ export default function KpPanel(props) {
                             {
                                 ...prev, [key]: {
                                     ...value, value: {
-                                        [0]: result.array[key][0],
-                                        [1]: result.array[key][1]
+                                        [0]: result.data[key][0],
+                                        [1]: result.data[key][1]
                                     }
                                 }
                             }
