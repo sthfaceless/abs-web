@@ -1,5 +1,5 @@
 export const properties = {
-    inconsistencyUrl: '/api/kp/inconsistency',
+    inconsistencyUrl: '/api/kp/consistency',
     reconciliationHistory: 'reconciliationHistory',
     historySize: 3
 }

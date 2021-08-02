@@ -15,8 +15,8 @@ const requestStatus = {
     NON_REQUESTED: 0,
     WAITING: 1,
     ERROR: 2,
-    SUCCESS_INCONSISTENCY: 3,
-    SUCCESS_NOT_INCONSISTED: 4
+    SUCCESS_CONSISTENCY: 3,
+    SUCCESS_INCONSISTENCY: 4
 }
 
 const getDefaultFields = (kpType, kpTypes) => {
@@ -155,8 +155,8 @@ export default function KpPanel(props) {
         setStatus(requestStatus.WAITING);
         requestInconsistencyChecking(data,
             (result) => {
-                if (result.inconsistent) {
-                    setStatus(requestStatus.SUCCESS_INCONSISTENCY);
+                if (result.consistent) {
+                    setStatus(requestStatus.SUCCESS_CONSISTENCY);
                     const __fields = Object.entries(fields).reduce((prev, [key, value]) => (
                             {
                                 ...prev, [key]: {
@@ -169,15 +169,15 @@ export default function KpPanel(props) {
                         ),
                         getDefaultFields(props.kpType, props.kpTypes))
                     setFields(__fields);
-                    updateReconciliationHistory(__fields, data.type, estimationType, __baseNumber, true, 'Inconsistent');
+                    updateReconciliationHistory(__fields, data.type, estimationType, __baseNumber, true, 'Consistent');
                 } else {
-                    setStatus(requestStatus.SUCCESS_NOT_INCONSISTED);
+                    setStatus(requestStatus.SUCCESS_INCONSISTENCY);
                     const __fields = Object.entries(fields).reduce((prev, [key, value]) => ({
                             ...prev, [key]: {...value, className: 'is-danger', valid: false}
                         }),
                         getDefaultFields(props.kpType, props.kpTypes));
                     setFields(__fields);
-                    updateReconciliationHistory(__fields, data.type, estimationType, __baseNumber, false, 'Not inconsistent');
+                    updateReconciliationHistory(__fields, data.type, estimationType, __baseNumber, false, 'Inconsistent');
                 }
             },
             (error) => {
@@ -224,10 +224,10 @@ export default function KpPanel(props) {
                 <div className="kp-container__result">
                     {status === requestStatus.WAITING && <progress className="progress is-small is-primary"/>}
                     {status === requestStatus.ERROR && <p className="has-text-danger">Server error</p>}
+                    {status === requestStatus.SUCCESS_CONSISTENCY &&
+                    <p className="has-text-success">Data is consistent!</p>}
                     {status === requestStatus.SUCCESS_INCONSISTENCY &&
-                    <p className="has-text-success">Data is inconsistent!</p>}
-                    {status === requestStatus.SUCCESS_NOT_INCONSISTED &&
-                    <p className="has-text-danger-dark">Data is not inconsistent!</p>}
+                    <p className="has-text-danger-dark">Data is inconsistent!</p>}
                 </div>
                 {(status !== requestStatus.NON_REQUESTED && status !== requestStatus.WAITING) &&
                 <div className="kp-container__requested">
