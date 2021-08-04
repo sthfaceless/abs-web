@@ -1,5 +1,5 @@
 #Webstorm configurations
-.idea/*
+**/.idea/*
 
 # Logs
 logs
@@ -116,7 +116,7 @@ dist
 /coverage
 
 # production
-/build
+**/build
 
 # misc
 .DS_Store
@@ -131,3 +131,6 @@ yarn-error.log*
 
 #Sass caches
 **/.sass-cache/**
+#python
+**/venv/*
+**/__pycache__/*
