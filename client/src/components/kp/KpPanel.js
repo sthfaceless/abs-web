@@ -49,7 +49,7 @@ export default function KpPanel(props) {
     const checkIntervalValue = (firstValue, secondValue, type = estimationType) => {
         const _firstValue = normalizeNumber(firstValue);
         const _secondValue = normalizeNumber(secondValue);
-        return _secondValue >= _firstValue &&  _secondValue >= 0 && _firstValue <= 1;
+        return _secondValue >= _firstValue && _secondValue >= 0 && _firstValue <= 1;
     }
     const updateValid = (valid) => {
         if (valid !== validForm)
@@ -67,7 +67,7 @@ export default function KpPanel(props) {
         updateValid(true);
     }
     const getValueObject = (firstValue, secondValue, type = estimationType, index) => {
-        if (index === 0 && props.kpType !== props.kpTypes.QUANTS)
+        if (index.toString() === '0' && props.kpType !== props.kpTypes.QUANTS)
             return {[0]: 1, [1]: 1};
         return {
             [0]: firstValue,
@@ -84,6 +84,21 @@ export default function KpPanel(props) {
             return 'is-dark';
         else
             return 'is-danger';
+    }
+    const validateFields = (__fields) => {
+        return Object.entries(__fields).reduce((prev, [key, value]) => {
+                if (value) {
+                    const __value = getValueObject(value.value[0], value.value[1], estimationType, key);
+                    return {
+                        ...prev, [key]: {
+                            'value' : __value,
+                            className: getClassName(__value[0], __value[1]),
+                            valid: isValidFields(__value[0], __value[1])
+                        }
+                    }
+                }else return value
+            },
+            getDefaultFields(props.kpType, props.kpTypes));
     }
     const normalizeValue = (value) => (
         Object.entries(value).reduce((prev, [key, value]) => ({...prev, [key]: normalizeNumber(value)}), {}))
@@ -188,7 +203,9 @@ export default function KpPanel(props) {
     }
     const modifyState = () => {
         setStatus(requestStatus.NON_REQUESTED);
-        validateForm(fields)
+        const __fields = validateFields(fields);
+        setFields(__fields);
+        validateForm(__fields)
     }
     return <>
         <KpPanelModifiers estimationTypes={estimationTypes} estimationType={estimationType}
